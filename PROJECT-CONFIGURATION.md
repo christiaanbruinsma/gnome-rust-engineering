@@ -275,6 +275,32 @@ Keep gettext initialization behind a small i18n boundary. Localize runtime UI an
 
 A compile-time translation catalog is not enough: perform a packaged/runtime locale smoke.
 
+### 11.1 Flatpak Locale extension boundary
+
+The normal Flatpak build SHOULD retain the standard `.Locale` extension behavior produced by `flatpak-builder`. Do not disable locale splitting merely to make a standalone bundle appear self-contained.
+
+Localization must be validated as a complete delivery chain:
+
+```text
+PO → MO generation → Meson install registration
+  → Flatpak Locale extension → installed locale subpaths
+  → runtime locale → gettext lookup → translated UI
+```
+
+A `.Locale` extension can exist in a local OSTree repository while only some language subpaths are installed on the host. Therefore:
+
+- a generated `.mo` file proves only MO generation;
+- a Meson installed-file entry proves only install registration;
+- an OSTree `.Locale` ref proves only extension creation/export;
+- `flatpak info` and direct filesystem inspection of the installed extension are required to prove which languages are actually installed;
+- runtime smoke must use the installed extension, not merely the source tree or build directory.
+
+When a supported language is missing from the installed Locale extension, install/update the extension's relevant language content through the Flatpak repository/install workflow before changing application gettext code.
+
+For repository-based local testing, user installation is the suite default. A user-level app installation can be followed by a user-level Locale extension update when a full localization matrix is required.
+
+A single-file `.flatpak` download does not by itself prove that every optional Locale extension language subpath is installed on the target host. Releases that use the standard `.Locale` model MUST validate the installed result explicitly.
+
 ## 12. Required validation ladder
 
 Do not collapse these into one claim:
