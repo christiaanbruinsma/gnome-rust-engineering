@@ -4,6 +4,19 @@ All notable changes to GNOME Rust Engineering are documented here.
 
 The repository uses semantic versioning for the engineering knowledge baseline. Reference applications are versioned independently.
 
+## Unreleased
+
+### Added
+
+- Proven local-repository Flatpak localization QA workflow based on Signature Designer v0.9.0 runtime evidence.
+- Explicit verification of `.Locale` catalog resolution through `/app/share/locale` symlinks using `find -L`.
+- Application-neutral `LANG`/`LANGUAGE` smoke workflow for the suite localization matrix.
+
+### Changed
+
+- Expanded the gettext packaged-runtime learning with Signature Designer as a third evidence case alongside Image Bench and Snippet Manager.
+- Strengthened the i18n and Flatpak guidance around repository-based app + `.Locale` validation.
+
 ## 1.0.0 — 2026-08-10
 
 Initial stable public baseline.
