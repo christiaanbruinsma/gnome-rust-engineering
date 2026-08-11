@@ -125,6 +125,62 @@ This means:
 
 The maintained standard therefore sits above any single reference application.
 
+## Localization and packaged Flatpak boundary
+
+For localized applications, the localization system is a complete delivery chain, not only a source-code concern:
+
+```text
+PO catalogs
+    ↓
+MO generation
+    ↓
+Meson install manifest
+    ↓
+Flatpak Locale extension
+    ↓
+installed locale subpaths
+    ↓
+runtime locale
+    ↓
+gettext lookup
+    ↓
+translated UI
+```
+
+The application SHOULD use GNU gettext through a small i18n boundary and keep English as the source/fallback language. The suite localization order is English, Dutch, German, French, Spanish, Italian, Portuguese.
+
+The standard Flatpak packaging model SHOULD retain the normal `.Locale` extension behavior rather than forcing all translations into the main application payload merely to simplify standalone bundles. Data Inspector and Image Bench v0.9.0 provide suite evidence for this model.
+
+A successfully generated `.mo` file does **not** prove that the installed application can use it. Localization smoke MUST inspect the packaged runtime boundary when a language failure is suspected.
+
+When debugging or validating a packaged localization issue, distinguish these gates:
+
+1. `.po` completeness;
+2. `.mo` generation;
+3. Meson install registration;
+4. Flatpak Locale extension creation;
+5. installed Locale subpaths/catalogs;
+6. runtime locale availability;
+7. gettext lookup inside the packaged runtime;
+8. application UI translation.
+
+A `.Locale` extension may exist in a local OSTree repository while only a subset of its language subpaths is installed locally. Testing a language that is not present in the installed Locale extension cannot establish an application gettext failure.
+
+For local repository testing, it is valid to update/install the Locale extension separately and then repeat runtime locale smoke. A single downloaded `.flatpak` bundle does not, by itself, prove that every optional Locale extension subpath is installed on the target system.
+
+Do not change working gettext initialization or disable locale splitting merely because a standalone Flatpak initially launches in English. First trace the packaged chain and inspect the installed Locale extension.
+
+Supported locale runtime smoke SHOULD include each supported non-source language using explicit locale environment variables, for example:
+
+```bash
+flatpak run \
+  --env=LANG=nl_NL.UTF-8 \
+  --env=LANGUAGE=nl \
+  <APP_ID>
+```
+
+The equivalent check SHOULD be repeated for `de`, `fr`, `es`, `it`, and `pt` when those languages are supported. User data, file contents, identifiers, and source values MUST remain untranslated.
+
 ## Conformance
 
 When auditing an application against the Golden Standard, classify each applicable requirement as:
