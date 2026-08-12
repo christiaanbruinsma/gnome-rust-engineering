@@ -77,11 +77,11 @@ Promotion is not based on preference, repetition in documentation, or one develo
 
 When a Golden Standard document uses these terms:
 
-- **MUST** — required for conformance when applicable.
-- **SHOULD** — the preferred evidence-backed default; deviation requires a clear technical reason.
-- **MAY** — optional and context-dependent.
-- **N/A** — genuinely not applicable.
-- **NOT TESTED** — applicable but not yet verified.
+- **MUST** means required for conformance when applicable.
+- **SHOULD** means the preferred evidence-backed default; deviation requires a clear technical reason.
+- **MAY** means optional and context-dependent.
+- **N/A** means genuinely not applicable.
+- **NOT TESTED** means applicable but not yet verified.
 
 An unknown or untested item must never be silently converted to PASS or N/A.
 
@@ -136,9 +136,9 @@ MO generation
     ↓
 Meson install manifest
     ↓
-Flatpak Locale extension
+Flatpak packaging model
     ↓
-installed locale subpaths
+installed locale files or extension subpaths
     ↓
 runtime locale
     ↓
@@ -149,11 +149,21 @@ translated UI
 
 The application SHOULD use GNU gettext through a small i18n boundary and keep English as the source/fallback language. The suite localization order is English, Dutch, German, French, Spanish, Italian, Portuguese.
 
-The standard Flatpak packaging model SHOULD retain the normal `.Locale` extension behavior rather than forcing all translations into the main application payload merely to simplify standalone bundles. Data Inspector and Image Bench v0.9.0 provide suite evidence for this model.
+### Distribution model decides locale packaging
 
-A successfully generated `.mo` file does **not** prove that the installed application can use it. Localization smoke MUST inspect the packaged runtime boundary when a language failure is suspected.
+Flatpak Builder defaults to separating locale data into a `.Locale` extension. That remains a valid and appropriate model for repository-based distribution such as Flathub or another OSTree repository where application extensions are part of the distribution contract.
 
-When debugging or validating a packaged localization issue, distinguish these gates:
+For this suite's standalone GitHub `.flatpak` releases, where one downloadable file is intended to be the complete installable release artifact, supported gettext catalogs SHOULD be embedded in the application payload with:
+
+```yaml
+separate-locales: false
+```
+
+This rule is distribution-specific, not universal. Do not disable locale splitting merely because it is inconvenient to debug, and do not retain locale splitting merely because it is Flatpak's default when the actual release contract is a single self-contained bundle.
+
+### Repository / Locale-extension validation
+
+When locale splitting is enabled, distinguish these gates:
 
 1. `.po` completeness;
 2. `.mo` generation;
@@ -166,9 +176,22 @@ When debugging or validating a packaged localization issue, distinguish these ga
 
 A `.Locale` extension may exist in a local OSTree repository while only a subset of its language subpaths is installed locally. Testing a language that is not present in the installed Locale extension cannot establish an application gettext failure.
 
-For local repository testing, it is valid to update/install the Locale extension separately and then repeat runtime locale smoke. A single downloaded `.flatpak` bundle does not, by itself, prove that every optional Locale extension subpath is installed on the target system.
+For local repository testing, it is valid to update/install the Locale extension separately and then repeat runtime locale smoke.
 
-Do not change working gettext initialization or disable locale splitting merely because a standalone Flatpak initially launches in English. First trace the packaged chain and inspect the installed Locale extension.
+### Standalone-bundle validation
+
+When `separate-locales: false` is used for a standalone GitHub release, the release gate MUST validate the actual standalone artifact, not only the source tree or local repository:
+
+1. confirm every supported `.mo` file is present in the built application payload;
+2. run explicit locale smoke for the supported matrix from the packaged application;
+3. build the final standalone `.flatpak`;
+4. install or reinstall that exact bundle;
+5. perform at least one explicit locale sanity check on the installed standalone bundle;
+6. record and publish the final artifact checksum.
+
+Delivery Hub v0.9.0 provides direct evidence for this boundary: six non-source catalogs were embedded, all six supported translations passed packaged runtime smoke, and the exact final standalone bundle passed an installed Dutch locale sanity check before publication.
+
+A successfully generated `.mo` file does **not** prove that the installed application can use it. A successful local-repository test also does not, by itself, prove that the exact downloadable standalone artifact is complete.
 
 Supported locale runtime smoke SHOULD include each supported non-source language using explicit locale environment variables, for example:
 
@@ -181,14 +204,16 @@ flatpak run \
 
 The equivalent check SHOULD be repeated for `de`, `fr`, `es`, `it`, and `pt` when those languages are supported. User data, file contents, identifiers, and source values MUST remain untranslated.
 
+Localization MUST remain a presentation concern. Machine-facing state, identifiers, enum values and domain contracts MUST NOT depend on translated strings. When legacy behavior already depends on stable human-readable strings, preserve those values and localize at the UI boundary until the domain contract can be typed safely.
+
 ## Conformance
 
 When auditing an application against the Golden Standard, classify each applicable requirement as:
 
-- **PASS** — the named requirement was actually verified.
-- **DEVIATION** — the implementation differs; document the technical reason and impact.
-- **NOT TESTED** — applicable but not verified.
-- **N/A** — genuinely not applicable.
+- **PASS** means the named requirement was actually verified.
+- **DEVIATION** means the implementation differs; document the technical reason and impact.
+- **NOT TESTED** means applicable but not verified.
+- **N/A** means genuinely not applicable.
 
 A project should not be called Golden Standard compliant while required applicable gates remain NOT TESTED.
 
