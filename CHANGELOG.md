@@ -6,18 +6,37 @@ The repository uses semantic versioning for the engineering knowledge baseline. 
 
 ## Unreleased
 
+No unreleased changes recorded.
+
+## 1.1.0 - 2026-08-13
+
+Evidence-backed update from Image Bench, Snippet Manager, Signature Designer, PDF Workbench and Delivery Hub release work.
+
 ### Added
 
+- Standalone Flatpak localization learning with `separate-locales: false` for the suite's self-contained GitHub `.flatpak` distribution model.
+- Manual target-SDK linker-boundary learning, including targeted `-C linker-features=-lld` diagnosis without prematurely patching the product build.
+- Test-fixture branch-isolation learning: earlier validation guards must remain satisfied when a test intends to exercise a downstream failure mode.
+- Meson profile contract learning: profile names must be read from `meson.options`, not inferred from words such as release or development.
+- Flatpak native dependency discoverability learning based on PDF Workbench Poppler/pkg-config evidence.
+- Localization architecture learning: keep machine-facing domain contracts stable and translate at the presentation boundary.
 - Proven local-repository Flatpak localization QA workflow based on Signature Designer v0.9.0 runtime evidence.
 - Explicit verification of `.Locale` catalog resolution through `/app/share/locale` symlinks using `find -L`.
 - Application-neutral `LANG`/`LANGUAGE` smoke workflow for the suite localization matrix.
 
 ### Changed
 
-- Expanded the gettext packaged-runtime learning with Signature Designer as a third evidence case alongside Image Bench and Snippet Manager.
-- Strengthened the i18n and Flatpak guidance around repository-based app + `.Locale` validation.
+- Revised the Golden Standard localization model to distinguish repository/Flathub `.Locale` distribution from standalone self-contained GitHub bundles.
+- Superseded the earlier locale-splitting-only guidance in the gettext runtime learning.
+- Updated project configuration with distribution-specific locale packaging, standalone-bundle QA, linker-boundary diagnostics, test-fixture isolation and native dependency discoverability.
+- Strengthened the requirement that localization remains a presentation concern rather than a machine-facing state contract.
+- Clarified that manual SDK-shell failures must be reproduced in the actual Builder/Flatpak pipeline before persistent build workarounds are adopted.
 
-## 1.0.0 — 2026-08-10
+### Evidence boundary
+
+The `separate-locales: false` rule in this release is intentionally scoped to this suite's standalone GitHub `.flatpak` distribution contract. Flatpak's default `.Locale` extension model remains valid for repository-based distribution. The update records both models rather than claiming one universal packaging rule.
+
+## 1.0.0 - 2026-08-10
 
 Initial stable public baseline.
 
