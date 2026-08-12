@@ -1,8 +1,8 @@
 # GNOME Rust Engineering
 
-**Current repository release: v1.0.0**
+**Current repository release: v1.1.0**
 
-This is the first stable public baseline of GNOME Rust Engineering. Data Inspector v0.9.0 remains the approved reference application; repository and application versions are intentionally independent.
+This is the current stable public baseline of GNOME Rust Engineering. Data Inspector v0.9.0 remains the approved reference application; repository and application versions are intentionally independent.
 
 Practical, evidence-first engineering knowledge for building and migrating native GNOME applications with Rust, GTK4, libadwaita, Meson and Flatpak.
 
@@ -48,9 +48,9 @@ A workaround is not automatically a pattern, and a pattern is not automatically 
 
 ## Promotion path
 
-1. **Project-specific** — record it first in the originating project's `docs/LEARNINGS.md`.
-2. **Possibly reusable** — when the lesson appears useful outside that project, add it to `learnings/`.
-3. **Proven suite-wide** — only after repeated evidence across projects may it be promoted to `patterns/` or `standards/`.
+1. **Project-specific**: record it first in the originating project's `docs/LEARNINGS.md`.
+2. **Possibly reusable**: when the lesson appears useful outside that project, add it to `learnings/`.
+3. **Proven suite-wide**: only after repeated evidence across projects may it be promoted to `patterns/` or `standards/`.
 
 When evidence is incomplete, the document must say so. Unknowns must not be filled in from assumption.
 
@@ -65,6 +65,13 @@ For concrete learnings, retain the originating project/gate and distinguish:
 
 Authored tests are not executed tests. A successful compile is not a runtime pass. Exact test counts are only recorded when the executed output or a retained project handover/log supports them.
 
+## What changed in v1.1.0
+
+The 1.1.0 baseline adds newer release evidence from Image Bench, Snippet Manager, Signature Designer, PDF Workbench and Delivery Hub.
+
+The most important revision is localization packaging: repository-based `.Locale` extensions and standalone self-contained `.flatpak` downloads are now documented as separate distribution boundaries. For this suite's standalone GitHub bundles, embedded catalogs with `separate-locales: false` are the evidence-backed default; repository distribution may continue to use Flatpak's normal Locale extension model.
+
+The release also adds learnings for manual SDK linker diagnostics, test-fixture branch isolation, Meson profile contracts, native Flatpak dependency discoverability and keeping localization at the presentation boundary.
 
 ## Golden reference implementation
 
