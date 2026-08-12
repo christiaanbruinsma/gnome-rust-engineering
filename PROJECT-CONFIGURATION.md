@@ -79,6 +79,25 @@ project/
 
 Exact module layout is application-specific.
 
+### Profile values are project-defined
+
+Do not assume that a release build literally uses a profile named `release`.
+
+Before issuing or reusing a profile-specific command, inspect `meson.options` and use its exact allowed values. Delivery Hub v0.9.0, for example, defined only:
+
+```meson
+choices: ['default', 'development']
+value: 'default'
+```
+
+Its release build therefore correctly used:
+
+```text
+-Dprofile=default
+```
+
+Treat `meson.options` as the source of truth, including when a handover or command copied from another project says otherwise.
+
 ## 4. Flatpak Rust toolchain
 
 Both release and development manifests should declare the Rust SDK extension:
@@ -188,6 +207,8 @@ Therefore:
 - Host failures are evidence about the host environment, not automatically evidence that product code is broken.
 - SDK success is not automatically a complete runtime or installed-Flatpak PASS.
 
+A manually entered target-SDK shell is also not identical to the actual Builder or `flatpak-builder` pipeline. If a manual Cargo invocation fails at the linker boundary while SDK dependency probes succeed, isolate the linker behavior and reproduce the issue in the real product pipeline before changing persistent project configuration.
+
 ## 8. Cargo and Meson responsibilities
 
 Keep the boundary explicit.
@@ -273,13 +294,29 @@ Suite order:
 
 Keep gettext initialization behind a small i18n boundary. Localize runtime UI and desktop/AppStream metadata where applicable. Never translate inspected user data, file contents, identifiers, or other source values.
 
-A compile-time translation catalog is not enough: perform a packaged/runtime locale smoke.
+Machine-facing behavior MUST NOT depend on translated strings. Prefer typed domain state and localize only at the UI/presentation boundary. When legacy logic already depends on stable human-readable service values, preserve those values during localization and map them to translated presentation separately.
 
-### 11.1 Flatpak Locale extension boundary
+A compile-time translation catalog is not enough: perform packaged/runtime locale smoke.
 
-The normal Flatpak build SHOULD retain the standard `.Locale` extension behavior produced by `flatpak-builder`. Do not disable locale splitting merely to make a standalone bundle appear self-contained.
+### 11.1 Choose locale packaging from the distribution model
 
-Localization must be validated as a complete delivery chain:
+Flatpak Builder defaults to splitting locale data into a `.Locale` extension.
+
+That model SHOULD remain in place for repository-based distribution such as Flathub or another OSTree repository where extensions are part of the installation contract.
+
+For this suite's standalone GitHub `.flatpak` releases, where a single downloaded file is intended to be the complete installable release artifact, use:
+
+```yaml
+separate-locales: false
+```
+
+This embeds the supported catalogs in the application payload instead of relying on a separate Locale extension.
+
+Do not treat either model as universal. The manifest must match the actual distribution contract.
+
+### 11.2 Repository / `.Locale` validation
+
+When locale splitting is enabled, validate the full chain:
 
 ```text
 PO → MO generation → Meson install registration
@@ -292,16 +329,70 @@ A `.Locale` extension can exist in a local OSTree repository while only some lan
 - a generated `.mo` file proves only MO generation;
 - a Meson installed-file entry proves only install registration;
 - an OSTree `.Locale` ref proves only extension creation/export;
-- `flatpak info` and direct filesystem inspection of the installed extension are required to prove which languages are actually installed;
+- installed extension inspection is required to prove which languages are available;
 - runtime smoke must use the installed extension, not merely the source tree or build directory.
 
-When a supported language is missing from the installed Locale extension, install/update the extension's relevant language content through the Flatpak repository/install workflow before changing application gettext code.
+When needed, follow `/app/share/locale` symlinks with `find -L` to prove normal gettext resolution.
 
-For repository-based local testing, user installation is the suite default. A user-level app installation can be followed by a user-level Locale extension update when a full localization matrix is required.
+### 11.3 Standalone-bundle validation
 
-A single-file `.flatpak` download does not by itself prove that every optional Locale extension language subpath is installed on the target host. Releases that use the standard `.Locale` model MUST validate the installed result explicitly.
+When `separate-locales: false` is used, verify all expected catalogs in the built application payload, for example:
 
-## 12. Required validation ladder
+```text
+/app/share/locale/<lang>/LC_MESSAGES/<GETTEXT_DOMAIN>.mo
+```
+
+Then:
+
+1. install from the local repository and run the supported locale matrix;
+2. build the final standalone `.flatpak`;
+3. install or reinstall that exact standalone file;
+4. perform at least one explicit locale sanity check on the installed release artifact;
+5. record and publish the final SHA-256.
+
+Delivery Hub v0.9.0 proved this standalone release path with embedded Dutch, German, French, Spanish, Italian and Portuguese catalogs, six-language packaged runtime smoke, and a final installed standalone-bundle locale sanity check.
+
+### 11.4 Runtime locale smoke
+
+Always stop the application before changing language so an existing process does not reuse the previous environment.
+
+Example:
+
+```bash
+flatpak run \
+  --env=LANG=nl_NL.UTF-8 \
+  --env=LANGUAGE=nl \
+  <APP_ID>
+```
+
+Repeat for the supported language matrix:
+
+```text
+nl_NL.UTF-8 / nl
+de_DE.UTF-8 / de
+fr_FR.UTF-8 / fr
+es_ES.UTF-8 / es
+it_IT.UTF-8 / it
+pt_PT.UTF-8 / pt
+```
+
+English remains the source/fallback smoke.
+
+## 12. Native build dependency discoverability
+
+A native dependency built by an earlier Flatpak module is not automatically discoverable by a later Rust/Cargo module.
+
+When `pkg-config` reports a missing library that should already have been built:
+
+1. inspect the actual installed `.pc` file location inside the same Flatpak prefix;
+2. run `pkg-config` in that same build boundary;
+3. compare the producer module's install directory with the consumer's search paths;
+4. align install layout through the dependency's supported Meson/CMake option when required;
+5. rebuild the real Flatpak pipeline before changing Rust bindings.
+
+Do not hardcode `lib` or `lib64` as a universal solution. PDF Workbench proved only that its Poppler producer/consumer contract needed `poppler-glib.pc` discoverable under the path used by the target build, ultimately verified at `/app/lib/pkgconfig/poppler-glib.pc`.
+
+## 13. Required validation ladder
 
 Do not collapse these into one claim:
 
@@ -341,16 +432,18 @@ Minimum applicable release gates:
 14. verify release metadata, license, source inventory, version, and assets;
 15. only then create/finalize the release tag.
 
-## 13. Evidence language
+When tests target an ordered validation pipeline, design fixtures so earlier guards remain satisfied unless guard precedence itself is the behavior under test. A test name or downstream assertion does not prove that the intended branch executed.
+
+## 14. Evidence language
 
 When recording results:
 
-- **FACT** — demonstrated by code, output, logs, tests, official validation tooling, or installed package behavior.
-- **UNKNOWN** — not yet demonstrated.
-- **HYPOTHESIS** — a proposed explanation with a falsifiable test.
-- **PASS** — the named gate was actually executed and passed.
-- **NOT TESTED** — applicable but not executed.
-- **N/A** — genuinely not applicable.
+- **FACT** means demonstrated by code, output, logs, tests, official validation tooling, or installed package behavior.
+- **UNKNOWN** means not yet demonstrated.
+- **HYPOTHESIS** means a proposed explanation with a falsifiable test.
+- **PASS** means the named gate was actually executed and passed.
+- **NOT TESTED** means applicable but not executed.
+- **N/A** means genuinely not applicable.
 
 Remember:
 
@@ -361,7 +454,7 @@ runtime PASS ≠ installed Flatpak PASS
 reference implementation ≠ every implementation detail is a standard
 ```
 
-## 14. Recovery checklist for a forgotten/new project
+## 15. Recovery checklist for a forgotten/new project
 
 If a developer or assistant inherits a project with no context, inspect in this order:
 
@@ -384,7 +477,7 @@ If a developer or assistant inherits a project with no context, inspect in this 
 
 If a step cannot be verified, mark it UNKNOWN or NOT TESTED rather than guessing.
 
-## 15. Reference baseline
+## 16. Reference baseline
 
 Data Inspector v0.9.0 is the approved Golden Standard reference baseline as of 2026-08-10.
 
