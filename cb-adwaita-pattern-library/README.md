@@ -61,6 +61,29 @@ Identifiers remain stable even if a pattern is refined later.
 | [CBAPL-002](CBAPL-002-severity-eyebrow-dialog.md) | Severity Eyebrow Dialog | Reusable candidate |
 | [CBAPL-003](CBAPL-003-adaptive-segmented-strip.md) | Adaptive Segmented Strip | Reusable candidate — runtime-proven in Git Bench |
 
+## Shared scrollbar identity
+
+Scrollable CBAPL components may use either **Overlay** or **Reserved / Integrated** scrollbar placement when the surrounding content and interaction model justify it.
+
+Placement is not the visual identity.
+
+Across orientations and placement variants, the visible drag handle should preserve the same design language:
+
+- equal cross-axis thumb thickness;
+- equal rounded/pill geometry;
+- consistent resting contrast;
+- consistent hover and dragging emphasis;
+- a restrained trough treatment;
+- no orientation-specific switch between a hairline thumb and a substantially heavier thumb.
+
+The shared rule is:
+
+> **Placement may vary. Scrollbar identity must not.**
+
+Git Bench provided runtime evidence for this contract by combining a **Reserved / Integrated horizontal scrollbar** in CBAPL-003 with a **vertical Overlay scrollbar** in CBAPL-001 while using the same visible handle thickness and rounded geometry.
+
+Individual pattern documents define when each placement variant is appropriate and what additional layout constraints apply.
+
 ## Scope
 
 CBAPL is intended for recurring application-level concerns such as:
