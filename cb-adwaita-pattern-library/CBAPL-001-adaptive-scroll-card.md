@@ -97,6 +97,8 @@ A project should choose the variant that best fits the surrounding hierarchy. Bo
 
 CBAPL-001 supports two scrollbar placement variants. Placement may differ, but scrollbar identity must not.
 
+The actual choice between them follows the shared [CBAPL Scrollbar Placement Contract](SCROLLBAR-PLACEMENT-CONTRACT.md). For CBAPL-001, **Overlay is the normal default for passive vertical list/document content**. Use **Reserved / Integrated** when overlay can obscure important edge content or controls, or when scroll discoverability is materially important to the task.
+
 ### Overlay Scrollbar
 
 Use **Overlay Scrollbar** when the scrollbar can sit over the edge of the content without obscuring important information or controls.
@@ -131,7 +133,7 @@ Reserved / Integrated
 └─────────────────────────┘
 ```
 
-Neither variant is inherently preferred. Choose based on the content, available space, discoverability, and whether an overlay would interfere with the interface.
+Neither variant is inherently preferred in all contexts. Use the shared placement contract rather than local visual preference.
 
 ## Shared scrollbar identity
 
