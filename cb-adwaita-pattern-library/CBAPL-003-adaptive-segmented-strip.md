@@ -14,7 +14,7 @@ It avoids three recurring failures:
 
 1. a segmented control stretching to fill unnecessary horizontal space when only a few items are present;
 2. individual first/last buttons owning rounded outer corners in addition to an already rounded container; and
-3. a horizontal scrollbar being drawn over the controls or their labels.
+3. a horizontal scrollbar obscuring controls or using a visually unrelated drag-handle style.
 
 ## Behavioral contract
 
@@ -35,7 +35,7 @@ Invariants:
 - Segments remain visually contiguous and must not wrap to multiple lines.
 - Selected, hover, focus, and active states remain native interaction states inside the shared outer shape.
 - A horizontal scrollbar is shown only when actual overflow exists.
-- A scrollbar must never overlap, cover, or reduce the readable/control area of the segment buttons.
+- A scrollbar must never obscure labels or interfere with control operation.
 - The pattern adapts when the available width changes.
 
 ## Shape ownership
@@ -49,20 +49,35 @@ outer segmented container
 ├── owns boundary
 ├── owns clipping
 └── contains
-    ├── horizontal scrolling viewport
-    │   └── flat contiguous segment buttons
-    └── horizontal scrollbar when overflow exists
+    └── horizontal scrolling viewport
+        └── flat contiguous segment buttons
 ```
 
 The outer container is the persistent visible shape. Segment buttons may draw selection or interaction backgrounds, but they should not recreate first/last outer corner radii.
 
 When a selected segment touches the left or right edge, the outer container's clipping naturally constrains that selection surface to the shared rounded boundary.
 
-## Scrollbar contract
+## Scrollbar presentation variants
 
-Scrollbar placement is a first-class part of CBAPL-003.
+CBAPL-003 supports two scrollbar placement variants. Placement may differ, but scrollbar identity must not.
 
-The horizontal scrollbar must occupy its own layout area **below the segment controls** when overflow exists. It must not be an overlay drawn over button labels or consume the vertical allocation required by the buttons themselves.
+### Overlay Scrollbar
+
+Use **Overlay Scrollbar** when the horizontal scrollbar can sit over the lower edge of the control viewport without obscuring labels, focus indication, or other important interaction areas.
+
+- The scrollbar remains part of the scrolling viewport.
+- It may use native overlay visibility behavior.
+- The strip must reserve enough usable control area that the scrollbar does not visually collide with button contents.
+- The visible drag handle uses the shared CBAPL scrollbar identity defined below.
+
+### Reserved / Integrated Scrollbar
+
+Use **Reserved / Integrated Scrollbar** when the scrollbar should occupy its own layout area inside the same outer rounded component.
+
+- For horizontal scrolling, the reserved area normally sits below the segment row.
+- The scrollbar remains visually integrated with the component rather than appearing detached from it.
+- It appears only when actual overflow exists unless the application has a specific reason to keep it persistent.
+- The visible drag handle uses the same shared CBAPL scrollbar identity as the overlay variant.
 
 The runtime-proven Git Bench composition uses:
 
@@ -76,16 +91,43 @@ The runtime-proven Git Bench composition uses:
 Conceptually:
 
 ```text
+Overlay
+┌──────────────────────────────────────────────┐
+│ All │ Getting Started │ Changes │ Commits…  │
+│                ━━━━━━━━━━━━━                 │  scrollbar overlays lower edge
+└──────────────────────────────────────────────┘
+
+Reserved / Integrated
 ┌──────────────────────────────────────────────┐
 │ All │ Getting Started │ Changes │ Commits…  │
 ├──────────────────────────────────────────────┤
-│ ───────────── horizontal scrollbar ────────  │  only on overflow
+│                ━━━━━━━━━━━━━                 │  own internal row
 └──────────────────────────────────────────────┘
 ```
 
-Using only `overlay-scrolling = false` is **not sufficient evidence of a correct implementation**. In Git Bench, that first implementation still allowed the scrollbar to consume the same vertical allocation as the segment row, visually colliding with the controls. Moving the scrollbar to a separate layout child resolved the issue at the structural level.
+Neither variant is inherently preferred. Use Overlay where it stays unobtrusive and does not interfere with controls. Use Reserved / Integrated where physical separation improves clarity or prevents overlap.
 
-Alternative widget compositions are allowed only when they preserve the same invariant: the scrollbar is physically separated from the control area and cannot overlap the segments.
+Using only `overlay-scrolling = false` is **not sufficient evidence of a correct reserved implementation**. In Git Bench, that first implementation still allowed the scrollbar to consume the same vertical allocation as the segment row, visually colliding with the controls. Moving the scrollbar to a separate layout child resolved the issue at the structural level.
+
+## Shared scrollbar identity
+
+Scrollbar placement is allowed to vary. The **drag handle must remain visually consistent** across CBAPL components and placement variants.
+
+Shared invariants:
+
+- equal cross-axis thumb thickness for horizontal and vertical scrollbars;
+- equal thumb corner radius / pill geometry;
+- consistent resting contrast and opacity;
+- consistent hover emphasis;
+- consistent dragging emphasis;
+- a subtle trough treatment that does not visually overpower the controls;
+- orientation changes the direction and length of the thumb, not its visual identity.
+
+In short:
+
+> **Placement may vary. Scrollbar identity must not.**
+
+Git Bench runtime testing established a shared application scrollbar geometry in which the reserved horizontal scrollbar in the Git Guide and the vertical overlay scrollbar in its topic list use the same visible thumb thickness and rounded handle treatment while preserving their different placement behavior.
 
 ## Segment presentation
 
@@ -109,16 +151,16 @@ Typical building blocks can include:
 - `GtkBox` for the horizontal segment row;
 - grouped `GtkToggleButton` controls;
 - `GtkScrolledWindow`;
-- `GtkScrollbar` connected to the horizontal adjustment; and
+- `GtkScrollbar` connected to the horizontal adjustment for reserved placement; and
 - native style classes and normal GTK size negotiation.
 
-The exact Rust/widget composition is secondary to the behavioral and shape-ownership contracts.
+The exact Rust/widget composition is secondary to the behavioral, shape-ownership, and scrollbar-identity contracts.
 
 ## CBAPL extension
 
 GTK provides the primitives for horizontal scrolling, adjustments, natural size negotiation, grouping, clipping, and scrollbars. CBAPL adds an explicit application-level contract for how those primitives should be combined when segmented controls must remain compact at wide sizes, bounded at narrow sizes, and visually coherent inside one rounded container.
 
-CBAPL-003 also makes scrollbar placement explicit because a technically scrollable implementation can still be visually invalid when the scrollbar overlaps or compresses the controls.
+CBAPL-003 also makes scrollbar placement and visual identity explicit because a technically scrollable implementation can still be visually invalid when the scrollbar overlaps controls or uses a different visual language from other scrollable components.
 
 ## Implementation guidance
 
@@ -132,9 +174,11 @@ A correct implementation should be tested in at least these states:
 6. first, middle, and last segment selected;
 7. keyboard focus navigation across the group;
 8. scrollbar visibility appearing only when overflow exists;
-9. button labels remaining fully unobstructed when the scrollbar is present.
+9. button labels remaining fully unobstructed when the scrollbar is present;
+10. shared thumb geometry verified against vertical CBAPL scrollable components;
+11. both Overlay and Reserved / Integrated placement where an application uses both.
 
-Do not solve scrollbar overlap with arbitrary bottom padding around an overlay scrollbar. Prefer a structural layout where the scrollbar has its own allocation.
+Do not solve scrollbar overlap with arbitrary padding around a conflicting scrollbar. Prefer a composition where the chosen placement has a clear, stable allocation and preserves the control area.
 
 ## Evidence boundary
 
@@ -142,9 +186,13 @@ CBAPL-003 was formalized from the Git Bench **Git Guide** category strip.
 
 The initial implementation used a horizontally scrolling segmented ToggleButton group inside a rounded container. Runtime testing proved the desired adaptive-width behavior, but also exposed a failure: even after disabling overlay scrolling, the scrollbar shared the control area's vertical allocation and visually crossed the segment buttons.
 
-A second implementation moved the horizontal scrollbar to a separate child below the controls while sharing the same horizontal adjustment. Runtime testing then confirmed both required states:
+A second implementation moved the horizontal scrollbar to a separate child below the controls while sharing the same horizontal adjustment. Runtime testing then confirmed both required sizing states:
 
 - at wide widths the complete segmented strip fits naturally with no scrollbar; and
-- at narrow widths the outer container is bounded, the segment row scrolls horizontally, and the scrollbar remains physically below the controls without overlapping them.
+- at narrow widths the outer container is bounded, the segment row scrolls horizontally, and the reserved scrollbar remains physically below the controls without overlapping them.
 
-The behavioral contract and the Git Bench composition are therefore runtime-proven in one application. A single canonical Rust widget implementation has not yet been proven across the application suite, so the current status remains **Reusable candidate** rather than suite-wide implementation standard.
+Git Bench later provided additional runtime evidence for the shared scrollbar identity: the reserved horizontal thumb and the vertical overlay thumb in the Git Guide were styled with the same cross-axis thickness and rounded handle geometry while retaining their different placement behavior.
+
+The behavioral contract and the Git Bench Reserved / Integrated composition are therefore runtime-proven in one application. Overlay remains a supported presentation variant that must be verified in each concrete segmented-control composition before that implementation is treated as canonical.
+
+A single canonical Rust widget implementation has not yet been proven across the application suite, so the current status remains **Reusable candidate** rather than suite-wide implementation standard.
