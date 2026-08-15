@@ -61,9 +61,19 @@ Identifiers remain stable even if a pattern is refined later.
 | [CBAPL-002](CBAPL-002-severity-eyebrow-dialog.md) | Severity Eyebrow Dialog | Reusable candidate |
 | [CBAPL-003](CBAPL-003-adaptive-segmented-strip.md) | Adaptive Segmented Strip | Reusable candidate — runtime-proven in Git Bench |
 
-## Shared scrollbar identity
+## Shared scrollbar placement and identity
 
-Scrollable CBAPL components may use either **Overlay** or **Reserved / Integrated** scrollbar placement when the surrounding content and interaction model justify it.
+Scrollable CBAPL components may use either **Overlay** or **Reserved / Integrated** scrollbar placement.
+
+The placement choice is governed by the shared [Scrollbar Placement Contract](SCROLLBAR-PLACEMENT-CONTRACT.md).
+
+Default guidance:
+
+- passive vertical lists/documents → **Overlay**;
+- interactive horizontal controls → **Reserved / Integrated**;
+- if an overlay can obscure labels, controls, focus, selection, drag/resize affordances, or other important edge content → **Reserved / Integrated**;
+- if scrolling itself is an important and otherwise easy-to-miss task affordance → prefer **Reserved / Integrated**;
+- do not switch placement at arbitrary responsive breakpoints when the component role has not changed.
 
 Placement is not the visual identity.
 
@@ -81,8 +91,6 @@ The shared rule is:
 > **Placement may vary. Scrollbar identity must not.**
 
 Git Bench provided runtime evidence for this contract by combining a **Reserved / Integrated horizontal scrollbar** in CBAPL-003 with a **vertical Overlay scrollbar** in CBAPL-001 while using the same visible handle thickness and rounded geometry.
-
-Individual pattern documents define when each placement variant is appropriate and what additional layout constraints apply.
 
 ## Scope
 
