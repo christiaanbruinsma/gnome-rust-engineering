@@ -59,6 +59,7 @@ Identifiers remain stable even if a pattern is refined later.
 | --- | --- | --- |
 | [CBAPL-001](CBAPL-001-adaptive-scroll-card.md) | Adaptive Scroll Card | Reusable candidate |
 | [CBAPL-002](CBAPL-002-severity-eyebrow-dialog.md) | Severity Eyebrow Dialog | Reusable candidate |
+| [CBAPL-003](CBAPL-003-adaptive-segmented-strip.md) | Adaptive Segmented Strip | Reusable candidate — runtime-proven in Git Bench |
 
 ## Scope
 
