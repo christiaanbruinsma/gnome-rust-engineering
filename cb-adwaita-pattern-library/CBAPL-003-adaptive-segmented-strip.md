@@ -61,6 +61,8 @@ When a selected segment touches the left or right edge, the outer container's cl
 
 CBAPL-003 supports two scrollbar placement variants. Placement may differ, but scrollbar identity must not.
 
+The actual choice between them follows the shared [CBAPL Scrollbar Placement Contract](SCROLLBAR-PLACEMENT-CONTRACT.md). For CBAPL-003, **Reserved / Integrated is the normal default** because the contents are interactive horizontal controls and hidden overflow is task-relevant. Overlay remains valid only when it can be proven not to interfere with labels, focus, selection, or pointer/touch targets.
+
 ### Overlay Scrollbar
 
 Use **Overlay Scrollbar** when the horizontal scrollbar can sit over the lower edge of the control viewport without obscuring labels, focus indication, or other important interaction areas.
@@ -105,7 +107,7 @@ Reserved / Integrated
 └──────────────────────────────────────────────┘
 ```
 
-Neither variant is inherently preferred. Use Overlay where it stays unobtrusive and does not interfere with controls. Use Reserved / Integrated where physical separation improves clarity or prevents overlap.
+Use the shared placement contract rather than local visual preference.
 
 Using only `overlay-scrolling = false` is **not sufficient evidence of a correct reserved implementation**. In Git Bench, that first implementation still allowed the scrollbar to consume the same vertical allocation as the segment row, visually colliding with the controls. Moving the scrollbar to a separate layout child resolved the issue at the structural level.
 
