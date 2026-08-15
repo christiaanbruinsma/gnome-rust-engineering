@@ -6,7 +6,15 @@ The repository uses semantic versioning for the engineering knowledge baseline. 
 
 ## Unreleased
 
-No unreleased changes recorded.
+### Added
+
+- Introduced the **CB Adwaita Pattern Library (CBAPL)** as a project-authored companion layer for reusable GTK4/libadwaita UI, interaction, layout, and semantic patterns.
+- Added **CBAPL-001 — Adaptive Scroll Card** with the natural-height → bounded-height → internal-scroll behavior contract and persistent rounded viewport clipping.
+- Added **CBAPL-002 — Severity Eyebrow Dialog** with the `EYEBROW → TITLE → BODY → ACTIONS` hierarchy and semantic severity mapping for notice, confirmation, success, warning, error, and danger states.
+
+### Evidence boundary
+
+The initial CBAPL entries are documented as **Reusable candidate** patterns. Their behavioral and semantic contracts are evidence-backed, but exact implementation details are not yet claimed as suite-wide canonical components.
 
 ## 1.1.0 - 2026-08-13
 

@@ -28,6 +28,14 @@ Read [DISCLAIMER.md](DISCLAIMER.md) before relying on the material.
 
 If you are starting, recovering, or auditing a Rust GNOME project, begin with [PROJECT-CONFIGURATION.md](PROJECT-CONFIGURATION.md). It is the application-neutral setup and recovery guide for GNOME Builder, Rust, Meson, Flatpak, custom QA commands, identities, validation gates, icons, and localization.
 
+## CB Adwaita Pattern Library
+
+The [CB Adwaita Pattern Library](cb-adwaita-pattern-library/README.md) is the repository's project-authored companion layer for reusable GTK4/libadwaita UI, interaction, layout, and semantic patterns.
+
+It complements the GNOME Human Interface Guidelines rather than replacing them. Patterns remain evidence-bounded and must not be presented as official GNOME guidance.
+
+Current entries include **CBAPL-001 Adaptive Scroll Card** and **CBAPL-002 Severity Eyebrow Dialog**.
+
 ## Goals
 
 - Preserve proven engineering knowledge for reuse across GNOME applications.
