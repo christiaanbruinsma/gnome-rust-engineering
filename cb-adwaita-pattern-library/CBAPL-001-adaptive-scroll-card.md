@@ -60,7 +60,7 @@ This avoids a visually nested card-inside-card result and prevents first/last ro
 
 ## Presentation variants
 
-CBAPL-001 defines one behavioral component with two supported presentation variants. The sizing, scrolling, clipping, and interaction contracts are identical; only the persistent outer surface treatment changes.
+CBAPL-001 defines one behavioral component with two supported surface variants. The sizing, scrolling, clipping, and interaction contracts are identical; only the persistent outer surface treatment changes.
 
 ### Surface Card
 
@@ -93,6 +93,66 @@ CBAPL-001 Adaptive Scroll Card
 
 A project should choose the variant that best fits the surrounding hierarchy. Both remain the same CBAPL-001 component and must preserve the same behavior.
 
+## Scrollbar presentation variants
+
+CBAPL-001 supports two scrollbar placement variants. Placement may differ, but scrollbar identity must not.
+
+### Overlay Scrollbar
+
+Use **Overlay Scrollbar** when the scrollbar can sit over the edge of the content without obscuring important information or controls.
+
+- The scrollbar remains visually integrated with the content viewport.
+- It may use native overlay visibility behavior.
+- The overlay must not make text, row actions, selection affordances, or other important content difficult to read or operate.
+- The visible drag handle uses the shared CBAPL scrollbar identity defined below.
+
+### Reserved / Integrated Scrollbar
+
+Use **Reserved / Integrated Scrollbar** when the scrollbar should have its own layout allocation inside the same outer component.
+
+- For vertical content, the reserved area normally sits along the right edge.
+- The scrollbar remains inside the same rounded outer shape and is not presented as a detached control.
+- The reserved gutter should appear only when required unless the application has a specific reason to keep it persistent.
+- The visible drag handle uses the same shared CBAPL scrollbar identity as the overlay variant.
+
+Conceptually:
+
+```text
+Overlay
+┌─────────────────────────┐
+│ content              ▐  │  scrollbar overlays edge content
+│ content              ▐  │
+└─────────────────────────┘
+
+Reserved / Integrated
+┌─────────────────────────┐
+│ content            │ ▐  │  scrollbar has its own internal gutter
+│ content            │ ▐  │
+└─────────────────────────┘
+```
+
+Neither variant is inherently preferred. Choose based on the content, available space, discoverability, and whether an overlay would interfere with the interface.
+
+## Shared scrollbar identity
+
+Scrollbar placement is allowed to vary. The **drag handle must remain visually consistent** across CBAPL components and placement variants.
+
+Shared invariants:
+
+- equal cross-axis thumb thickness for horizontal and vertical scrollbars;
+- equal thumb corner radius / pill geometry;
+- consistent resting contrast and opacity;
+- consistent hover emphasis;
+- consistent dragging emphasis;
+- a subtle trough treatment that does not visually overpower the content;
+- orientation changes the direction and length of the thumb, not its visual identity.
+
+In short:
+
+> **Placement may vary. Scrollbar identity must not.**
+
+Git Bench runtime testing established a shared application scrollbar geometry in which overlay and reserved scrollbars use the same visible thumb thickness and rounded handle treatment while preserving their different placement behavior.
+
 ## Preferred list presentation
 
 When the Adaptive Scroll Card contains a row-based list, prefer a structurally flat inner list when native interaction states remain clear:
@@ -120,7 +180,10 @@ A correct implementation should be tested in at least these states:
 4. window resized smaller while the content is visible;
 5. window resized larger again after scrolling was required;
 6. pointer/focus interaction on first, middle, and last rows when a row-based list is used;
-7. both presentation variants where an application exposes or uses both.
+7. both surface presentation variants where an application exposes or uses both;
+8. overlay scrollbar placement where it is appropriate;
+9. reserved/integrated scrollbar placement where it is appropriate;
+10. shared thumb geometry verified against other CBAPL scrollable components.
 
 The outer visible surface should retain its rounded bottom corners in every state. Row interaction feedback should remain clear without introducing a second persistent card shape.
 
@@ -130,6 +193,8 @@ The pattern was formalized from repeated application UI work and from a Git Benc
 
 Git Bench subsequently provided runtime evidence for the preferred flat-inner-list presentation: the outer card retained the visible rounded surface and clipping, the inner list used separators without its own boxed outer frame, and native hover feedback remained clear.
 
-The two presentation variants formalize the distinction between a visually distinct card surface and an integrated native page surface while preserving one behavioral component contract. The Integrated Card variant still requires application-level runtime verification in each concrete widget composition before that implementation is treated as canonical.
+Git Bench later provided additional runtime evidence in the **Git Guide**: a vertical overlay scrollbar remained functionally overlay-based while adopting the same visible drag-handle geometry as the reserved horizontal scrollbar used by CBAPL-003. This established the shared scrollbar-identity rule without requiring both components to use the same scrollbar placement.
+
+The surface and scrollbar variants formalize presentation choices while preserving one behavioral component contract. Each concrete composition still requires application-level runtime verification before that implementation is treated as canonical.
 
 The behavioral and presentation contracts are considered reusable. A single canonical Rust widget implementation has not yet been proven across the application suite, so the current status remains **Reusable candidate** rather than suite-wide implementation standard.
